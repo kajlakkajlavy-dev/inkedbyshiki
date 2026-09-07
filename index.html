@@ -472,7 +472,18 @@
   }
   .photo-item-admin .photo-actions button:hover{border-color:var(--gold); color:var(--gold);}
   .photo-item-admin .photo-actions .btn-delete{border-color:#c98a76; color:#c98a76;}
-  .photo-item-admin .photo-actions .btn-delete:hover{background:#c98a76; color:var(--void);}
+    .photo-item-admin .photo-actions .btn-delete:hover{background:#c98a76; color:var(--void);}
+  .photo-cat-badge{
+    position:absolute; top:8px; left:8px;
+    background:rgba(198,163,94,0.9); color:var(--void);
+    padding:3px 8px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase;
+    font-weight:500;
+  }
+  .photo-cat-select{
+    background:var(--void); border:1px solid var(--line); color:var(--paper);
+    padding:4px 6px; font-size:10px; cursor:pointer;
+  }
+
   .photo-upload-btn{
     aspect-ratio:3/4; border:2px dashed var(--line); background:transparent;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -728,12 +739,12 @@
   const MONTHS = ['Január','Február','Marec','Apríl','Máj','Jún','Júl','August','September','Október','November','December'];
 
   // in-memory "database" — resets on page reload (demo only, zatiaľ bez servera)
-  const bookings = {}; // 'YYYY-MM-DD': {am:'free'|'booked'|'blocked', pm:'free'|'booked'|'blocked'}
+  let bookings = JSON.parse(localStorage.getItem('inkedbyshiki-bookings') || '{}'); // 'YYYY-MM-DD': {am:'free'|'booked'|'blocked', pm:'free'|'booked'|'blocked'}
 
   function pad(n){return n<10?'0'+n:''+n;}
   function keyOf(y,m,d){return `${y}-${pad(m+1)}-${pad(d)}`;}
   function getDay(key){ return bookings[key] || {am:'free', pm:'free'}; }
-  function setDay(key, val){ bookings[key] = val; }
+  function setDay(key, val){ bookings[key] = val; localStorage.setItem('inkedbyshiki-bookings', JSON.stringify(bookings)); }
   function isSunday(y,m,d){ return new Date(y,m,d).getDay()===0; }
   function isPast(y,m,d){ const t=new Date(); t.setHours(0,0,0,0); return new Date(y,m,d) < t; }
 
@@ -889,7 +900,11 @@
       btn.addEventListener('click', ()=>{
         const slot = btn.dataset.slot;
         const d = getDay(key);
-        d[slot] = d[slot]==='blocked' ? 'free' : 'blocked';
+        const isCurrentlyBlocked = d[slot]==='blocked';
+        const slotLabel = slot==='am' ? 'dopoludnie' : 'popoludnie';
+        const act = isCurrentlyBlocked ? 'Odblokovat' : 'Zablokovat';
+        if(!confirm(act + ' termin ' + slotLabel + ' dna ' + fmtDate(key) + '?')) return;
+        d[slot] = isCurrentlyBlocked ? 'free' : 'blocked';
         setDay(key, d);
         renderAdminCalendar(); renderDayControls(key);
       });
@@ -898,6 +913,8 @@
       btn.addEventListener('click', ()=>{
         const slot = btn.dataset.slot;
         const d = getDay(key);
+        const slotLabel = slot==='am' ? 'dopoludnie' : 'popoludnie';
+        if(!confirm('Zrusit rezervaciu na ' + slotLabel + ' dna ' + fmtDate(key) + '?')) return;
         d[slot] = 'free';
         setDay(key, d);
         renderAdminCalendar(); renderDayControls(key);
@@ -906,6 +923,8 @@
     document.getElementById('adcDayToggle').addEventListener('click', ()=>{
       const d = getDay(key);
       const nowBlocked = !(d.am==='blocked' && d.pm==='blocked');
+      const dayAct = nowBlocked ? 'Zablokovat' : 'Odblokovat';
+      if(!confirm(dayAct + ' cely den ' + fmtDate(key) + '?')) return;
       d.am = nowBlocked ? 'blocked' : 'free';
       d.pm = nowBlocked ? 'blocked' : 'free';
       setDay(key, d);
@@ -1053,7 +1072,7 @@
 
 <script>
 // ===== ADMIN MODE LOGIC =====
-const ADMIN_PASSWORD = 'shiki2024'; // Zmen si heslo!
+const ADMIN_PASSWORD = 'Atlantida1'; // Zmen si heslo!
 let isAdminMode = false;
 let logoClickCount = 0;
 let logoClickTimer = null;
@@ -1211,18 +1230,24 @@ function renderPhotoManager() {
   
   const gallery = document.getElementById('gallery');
   const items = gallery.querySelectorAll('.g-item');
+  const categories = {tribal:'Tribal', fineline:'Fine-line', napisy:'Napisy', ilustrativne:'Ilustrativne'};
   
   let html = '';
   items.forEach((item, index) => {
     const img = item.querySelector('img');
-    const src = img ? img.src.substring(0, 80) + '...' : '';
+    const cat = item.getAttribute('data-cat') || 'tribal';
+    const catLabel = categories[cat] || cat;
     html += `
       <div class="photo-item-admin" data-index="${index}">
         <img src="${img ? img.src : ''}" alt="">
+        <span class="photo-cat-badge">${catLabel}</span>
         <div class="photo-actions">
-          ${index > 0 ? `<button onclick="movePhoto(${index}, -1)" title="Posuň doľava">◀</button>` : ''}
-          ${index < items.length - 1 ? `<button onclick="movePhoto(${index}, 1)" title="Posuň doprava">▶</button>` : ''}
-          <button class="btn-delete" onclick="deletePhoto(${index})" title="Vymaž">✕</button>
+          <select class="photo-cat-select" onchange="changePhotoCategory(${index}, this.value)">
+            ${Object.keys(categories).map(k => `<option value="${k}" ${k===cat?'selected':''}>${categories[k]}</option>`).join('')}
+          </select>
+          ${index > 0 ? `<button onclick="movePhoto(${index}, -1)">◀</button>` : ''}
+          ${index < items.length - 1 ? `<button onclick="movePhoto(${index}, 1)">▶</button>` : ''}
+          <button class="btn-delete" onclick="deletePhoto(${index})">✕</button>
         </div>
       </div>
     `;
@@ -1231,13 +1256,69 @@ function renderPhotoManager() {
   html += `
     <label class="photo-upload-btn">
       <span class="plus">+</span>
-      <span>Pridať foto</span>
-      <input type="file" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
+      <span>Pridat foto</span>
+      <input type="file" accept="image/*" style="display:none" onchange="showUploadDialog(this)">
     </label>
   `;
   
   grid.innerHTML = html;
 }
+
+function changePhotoCategory(index, newCat) {
+  const gallery = document.getElementById('gallery');
+  const items = gallery.querySelectorAll('.g-item');
+  if(items[index]) {
+    items[index].setAttribute('data-cat', newCat);
+    renderPhotoManager();
+  }
+}
+
+function showUploadDialog(fileInput) {
+  const file = fileInput.files[0];
+  if(!file) return;
+  
+  const categories = {tribal:'Tribal', fineline:'Fine-line', napisy:'Napisy', ilustrativne:'Ilustrativne'};
+  const catOptions = Object.keys(categories).map(k => `<option value="${k}">${categories[k]}</option>`).join('');
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'admin-modal-overlay active';
+  overlay.innerHTML = `
+    <div class="admin-modal">
+      <h3>Pridat fotku</h3>
+      <p>Ku ktorej kategorii patri?</p>
+      <select id="uploadCatSelect" style="width:100%; background:var(--void); border:1px solid var(--line); color:var(--paper); padding:12px 14px; font-size:14px; font-family:'Work Sans', sans-serif; margin-bottom:16px;">
+        ${catOptions}
+      </select>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="this.closest('.admin-modal-overlay').remove()">Zrusit</button>
+        <button class="btn-confirm" id="confirmUpload">Pridat</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  
+  document.getElementById('confirmUpload').addEventListener('click', function() {
+    const cat = document.getElementById('uploadCatSelect').value;
+    overlay.remove();
+    uploadPhotoWithCategory(file, cat);
+  });
+}
+
+function uploadPhotoWithCategory(file, category) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const gallery = document.getElementById('gallery');
+    const categories = {tribal:'Tribal', fineline:'Fine-line', napisy:'Napisy', ilustrativne:'Ilustrativne'};
+    const newItem = document.createElement('div');
+    newItem.className = 'g-item';
+    newItem.setAttribute('data-cat', category);
+    newItem.innerHTML = `<img src="${e.target.result}" alt="${categories[category]}"><div class="g-label">${categories[category]}</div>`;
+    gallery.appendChild(newItem);
+    renderPhotoManager();
+  };
+  reader.readAsDataURL(file);
+}
+
 
 function movePhoto(index, direction) {
   const gallery = document.getElementById('gallery');
@@ -1266,23 +1347,7 @@ function deletePhoto(index) {
   }
 }
 
-function uploadPhoto(input) {
-  const file = input.files[0];
-  if(!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const gallery = document.getElementById('gallery');
-    const newItem = document.createElement('div');
-    newItem.className = 'g-item';
-    newItem.setAttribute('data-cat', 'tribal');
-    newItem.innerHTML = `<img src="${e.target.result}" alt="Nová fotka"><div class="g-label">Nová fotka</div>`;
-    gallery.appendChild(newItem);
-    renderPhotoManager();
-  };
-  reader.readAsDataURL(file);
-  input.value = '';
-}
+// uploadPhoto replaced by uploadPhotoWithCategory above
 
 // Enter key to confirm edit
 document.addEventListener('keydown', function(e) {
@@ -1294,4 +1359,4 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 </body>
-</html>
+</html>
