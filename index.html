@@ -386,6 +386,106 @@
   a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible{
     outline:2px solid var(--gold); outline-offset:3px;
   }
+
+  /* ===== ADMIN MODE STYLES ===== */
+  .admin-mode-bar{
+    position:fixed; bottom:0; left:0; right:0; z-index:200;
+    background:rgba(198,163,94,0.95); color:var(--void);
+    padding:12px 32px; text-align:center;
+    font-size:13px; letter-spacing:0.05em; text-transform:uppercase;
+    font-weight:500;
+  }
+  .admin-mode-bar button{
+    background:var(--void); color:var(--gold); border:none;
+    padding:6px 16px; margin-left:16px; cursor:pointer;
+    font-size:12px; text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .admin-mode-bar button:hover{background:var(--ember); color:var(--paper);}
+
+  /* Edit icons */
+  .editable{position:relative;}
+  .editable .edit-icon{
+    display:none; position:absolute; top:4px; right:4px;
+    background:var(--gold); color:var(--void);
+    width:24px; height:24px; border-radius:50%;
+    font-size:12px; cursor:pointer; border:none;
+    align-items:center; justify-content:center;
+  }
+  body.admin-active .editable .edit-icon{display:flex;}
+  .editable:hover .edit-icon{background:var(--ember-bright); color:var(--paper);}
+  .editable.editing{outline:2px dashed var(--gold); outline-offset:4px;}
+  .editable[contenteditable="true"]{background:rgba(198,163,94,0.08); min-height:20px;}
+
+  /* Password modal */
+  .admin-modal-overlay{
+    display:none; position:fixed; inset:0; z-index:300;
+    background:rgba(0,0,0,0.85); align-items:center; justify-content:center;
+  }
+  .admin-modal-overlay.active{display:flex;}
+  .admin-modal{
+    background:var(--void-2); border:1px solid var(--gold); padding:40px;
+    max-width:380px; width:90%; text-align:center;
+  }
+  .admin-modal h3{
+    font-family:'Playfair Display', serif; font-style:italic;
+    font-size:22px; margin-bottom:8px;
+  }
+  .admin-modal p{color:var(--ash); font-size:14px; margin-bottom:24px;}
+  .admin-modal input{
+    width:100%; background:var(--void); border:1px solid var(--line);
+    color:var(--paper); padding:12px 14px; font-size:14px;
+    font-family:'Work Sans', sans-serif; margin-bottom:16px; text-align:center;
+    letter-spacing:0.1em;
+  }
+  .admin-modal input:focus{outline:2px solid var(--gold); outline-offset:2px;}
+  .admin-modal .modal-btns{display:flex; gap:12px;}
+  .admin-modal .modal-btns button{flex:1; padding:12px; cursor:pointer; font-size:13px; text-transform:uppercase; letter-spacing:0.04em;}
+  .admin-modal .btn-confirm{background:var(--gold); color:var(--void); border:none; font-weight:500;}
+  .admin-modal .btn-confirm:hover{background:var(--ember-bright); color:var(--paper);}
+  .admin-modal .btn-cancel{background:none; border:1px solid var(--line); color:var(--ash);}
+  .admin-modal .btn-cancel:hover{border-color:var(--paper); color:var(--paper);}
+  .admin-modal .error-msg{color:#c98a76; font-size:12px; margin-top:-8px; margin-bottom:12px; display:none;}
+
+  /* Photo manager */
+  .photo-manager{
+    margin-top:40px; padding-top:40px; border-top:1px solid var(--line);
+  }
+  .photo-manager h3{
+    font-family:'Playfair Display', serif; font-style:italic; font-size:26px; margin-bottom:20px;
+  }
+  .photo-grid-admin{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:12px;
+  }
+  .photo-item-admin{
+    position:relative; aspect-ratio:3/4; overflow:hidden;
+    border:1px solid var(--line); background:var(--void);
+  }
+  .photo-item-admin img{width:100%; height:100%; object-fit:cover;}
+  .photo-item-admin .photo-actions{
+    position:absolute; inset:0; background:rgba(0,0,0,0.7);
+    display:none; align-items:center; justify-content:center; gap:8px;
+  }
+  .photo-item-admin:hover .photo-actions{display:flex;}
+  .photo-item-admin .photo-actions button{
+    background:var(--void); border:1px solid var(--line); color:var(--paper);
+    width:32px; height:32px; cursor:pointer; font-size:14px;
+  }
+  .photo-item-admin .photo-actions button:hover{border-color:var(--gold); color:var(--gold);}
+  .photo-item-admin .photo-actions .btn-delete{border-color:#c98a76; color:#c98a76;}
+  .photo-item-admin .photo-actions .btn-delete:hover{background:#c98a76; color:var(--void);}
+  .photo-upload-btn{
+    aspect-ratio:3/4; border:2px dashed var(--line); background:transparent;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--ash); font-size:13px; gap:8px;
+  }
+  .photo-upload-btn:hover{border-color:var(--gold); color:var(--gold);}
+  .photo-upload-btn .plus{font-size:28px; line-height:1;}
+
+  @media (max-width:820px){
+    .admin-mode-bar{padding:10px 16px; font-size:11px;}
+    .admin-modal{padding:24px;}
+    .photo-grid-admin{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:8px;}
+  }
 </style>
 </head>
 <body>
@@ -930,6 +1030,267 @@
       });
     });
   }
+</script>
+
+<!-- Admin Mode Elements -->
+<div class="admin-mode-bar" id="adminModeBar" style="display:none;">
+  <span>🔧 Admin mód aktívny</span>
+  <button onclick="toggleAdminMode(false)">Odísť z admin módu</button>
+</div>
+
+<div class="admin-modal-overlay" id="adminModal">
+  <div class="admin-modal">
+    <h3>🔒 Admin prístup</h3>
+    <p>Zadaj heslo pre správu webu</p>
+    <input type="password" id="adminPassword" placeholder="Heslo" autocomplete="off">
+    <div class="error-msg" id="adminErrorMsg">Nesprávne heslo!</div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAdminModal()">Zrušiť</button>
+      <button class="btn-confirm" onclick="verifyAdminPassword()">Prihlásiť</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== ADMIN MODE LOGIC =====
+const ADMIN_PASSWORD = 'shiki2024'; // Zmen si heslo!
+let isAdminMode = false;
+let logoClickCount = 0;
+let logoClickTimer = null;
+
+// Triple-click on footer logo to trigger admin login
+const footerLogo = document.querySelector('footer .brand, footer img');
+if(footerLogo) {
+  footerLogo.style.cursor = 'pointer';
+  footerLogo.addEventListener('click', function(e) {
+    e.preventDefault();
+    logoClickCount++;
+    clearTimeout(logoClickTimer);
+    logoClickTimer = setTimeout(() => { logoClickCount = 0; }, 800);
+    if(logoClickCount >= 3) {
+      logoClickCount = 0;
+      if(!isAdminMode) {
+        document.getElementById('adminModal').classList.add('active');
+        document.getElementById('adminPassword').focus();
+      }
+    }
+  });
+}
+
+function verifyAdminPassword() {
+  const input = document.getElementById('adminPassword').value;
+  if(input === ADMIN_PASSWORD) {
+    closeAdminModal();
+    toggleAdminMode(true);
+  } else {
+    document.getElementById('adminErrorMsg').style.display = 'block';
+    document.getElementById('adminPassword').value = '';
+    document.getElementById('adminPassword').focus();
+  }
+}
+
+function closeAdminModal() {
+  document.getElementById('adminModal').classList.remove('active');
+  document.getElementById('adminPassword').value = '';
+  document.getElementById('adminErrorMsg').style.display = 'none';
+}
+
+function toggleAdminMode(enable) {
+  isAdminMode = enable;
+  document.body.classList.toggle('admin-active', enable);
+  document.getElementById('adminModeBar').style.display = enable ? 'block' : 'none';
+  
+  if(enable) {
+    // Add edit icons to editable elements
+    initEditableElements();
+    // Show photo manager
+    initPhotoManager();
+  } else {
+    // Remove edit states
+    document.querySelectorAll('.editable').forEach(el => {
+      el.classList.remove('editing');
+      el.removeAttribute('contenteditable');
+    });
+  }
+}
+
+// ===== INLINE TEXT EDITING =====
+function initEditableElements() {
+  // Mark elements as editable
+  const selectors = [
+    '.hero-title', '.hero-sub', '.hero-sign',
+    '.section-eyebrow', 'h2', '.section-desc',
+    '.about-text p', '.stat b', '.stat span',
+    '.pricing-item b', '.review-card p',
+    '.info-list h4', '.info-list p'
+  ];
+  
+  selectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      if(!el.closest('.admin-modal') && !el.closest('.admin-mode-bar')) {
+        el.classList.add('editable');
+        if(!el.querySelector('.edit-icon')) {
+          const btn = document.createElement('button');
+          btn.className = 'edit-icon';
+          btn.innerHTML = '✏️';
+          btn.onclick = function(e) {
+            e.stopPropagation();
+            toggleEdit(el);
+          };
+          el.appendChild(btn);
+        }
+      }
+    });
+  });
+}
+
+function toggleEdit(el) {
+  const isEditing = el.hasAttribute('contenteditable');
+  if(isEditing) {
+    el.removeAttribute('contenteditable');
+    el.classList.remove('editing');
+    // Save to localStorage
+    saveContent();
+  } else {
+    el.setAttribute('contenteditable', 'true');
+    el.classList.add('editing');
+    el.focus();
+  }
+}
+
+function saveContent() {
+  const content = {};
+  document.querySelectorAll('.editable').forEach((el, i) => {
+    const key = el.getAttribute('data-content-id') || ('el-' + i);
+    if(!el.getAttribute('data-content-id')) {
+      el.setAttribute('data-content-id', key);
+    }
+    content[key] = el.innerHTML;
+  });
+  localStorage.setItem('inkedbyshiki-content', JSON.stringify(content));
+}
+
+function loadContent() {
+  const saved = localStorage.getItem('inkedbyshiki-content');
+  if(saved) {
+    const content = JSON.parse(saved);
+    Object.keys(content).forEach(key => {
+      const el = document.querySelector('[data-content-id="' + key + '"]');
+      if(el) el.innerHTML = content[key];
+    });
+  }
+}
+loadContent();
+
+// ===== PHOTO MANAGER =====
+function initPhotoManager() {
+  if(document.getElementById('photoManager')) return;
+  
+  const gallery = document.getElementById('gallery');
+  if(!gallery) return;
+  
+  const managerHTML = `
+    <div class="wrap photo-manager" id="photoManager">
+      <h3>Správa fotiek</h3>
+      <p class="section-desc" style="margin-bottom:20px;">Pridaj, presuň alebo vymaž fotografie z galérie.</p>
+      <div class="photo-grid-admin" id="photoGridAdmin"></div>
+    </div>
+  `;
+  
+  const adminPanel = document.getElementById('adminPanel');
+  if(adminPanel) {
+    adminPanel.insertAdjacentHTML('afterend', managerHTML);
+  }
+  
+  renderPhotoManager();
+}
+
+function renderPhotoManager() {
+  const grid = document.getElementById('photoGridAdmin');
+  if(!grid) return;
+  
+  const gallery = document.getElementById('gallery');
+  const items = gallery.querySelectorAll('.g-item');
+  
+  let html = '';
+  items.forEach((item, index) => {
+    const img = item.querySelector('img');
+    const src = img ? img.src.substring(0, 80) + '...' : '';
+    html += `
+      <div class="photo-item-admin" data-index="${index}">
+        <img src="${img ? img.src : ''}" alt="">
+        <div class="photo-actions">
+          ${index > 0 ? `<button onclick="movePhoto(${index}, -1)" title="Posuň doľava">◀</button>` : ''}
+          ${index < items.length - 1 ? `<button onclick="movePhoto(${index}, 1)" title="Posuň doprava">▶</button>` : ''}
+          <button class="btn-delete" onclick="deletePhoto(${index})" title="Vymaž">✕</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `
+    <label class="photo-upload-btn">
+      <span class="plus">+</span>
+      <span>Pridať foto</span>
+      <input type="file" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
+    </label>
+  `;
+  
+  grid.innerHTML = html;
+}
+
+function movePhoto(index, direction) {
+  const gallery = document.getElementById('gallery');
+  const items = Array.from(gallery.querySelectorAll('.g-item'));
+  const newIndex = index + direction;
+  
+  if(newIndex < 0 || newIndex >= items.length) return;
+  
+  if(direction === -1) {
+    items[index].parentNode.insertBefore(items[index], items[newIndex]);
+  } else {
+    items[index].parentNode.insertBefore(items[newIndex], items[index]);
+  }
+  
+  renderPhotoManager();
+}
+
+function deletePhoto(index) {
+  if(!confirm('Naozaj vymazať túto fotku?')) return;
+  
+  const gallery = document.getElementById('gallery');
+  const items = gallery.querySelectorAll('.g-item');
+  if(items[index]) {
+    items[index].remove();
+    renderPhotoManager();
+  }
+}
+
+function uploadPhoto(input) {
+  const file = input.files[0];
+  if(!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const gallery = document.getElementById('gallery');
+    const newItem = document.createElement('div');
+    newItem.className = 'g-item';
+    newItem.setAttribute('data-cat', 'tribal');
+    newItem.innerHTML = `<img src="${e.target.result}" alt="Nová fotka"><div class="g-label">Nová fotka</div>`;
+    gallery.appendChild(newItem);
+    renderPhotoManager();
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+// Enter key to confirm edit
+document.addEventListener('keydown', function(e) {
+  if(e.key === 'Enter' && e.target.getAttribute('contenteditable') === 'true') {
+    e.preventDefault();
+    toggleEdit(e.target);
+  }
+});
 </script>
 
 </body>
