@@ -705,7 +705,8 @@
   .slot-btn.slot-unavailable{opacity:0.35; cursor:not-allowed; text-decoration:line-through;}
   .selected-summary{margin-top:12px; font-size:13px; color:var(--gold);}
 
-  .admin-toggle-wrap{margin-top:60px; text-align:center;}
+  .admin-toggle-wrap{margin-top:60px; text-align:center; display:none;}
+  body.admin-active .admin-toggle-wrap{display:block;}
   .admin-toggle{
     background:none; border:1px dashed var(--line); color:var(--ash);
     padding:10px 20px; font-size:12px; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer;
