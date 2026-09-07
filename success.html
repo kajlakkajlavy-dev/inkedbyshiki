@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platba úspešná — InkedbyShiki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Work+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--void:#1a1310;--paper:#f4ecdf;--gold:#c6a35e;--ember:#4a3221;--line:#3a2c20;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--void);color:var(--paper);
+    font-family:'Work Sans',sans-serif;font-weight:300;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  .container{
+    text-align:center;padding:40px;max-width:500px;
+  }
+  .success-icon{
+    width:80px;height:80px;border-radius:50%;
+    background:var(--gold);color:var(--void);
+    display:flex;align-items:center;justify-content:center;
+    font-size:40px;margin:0 auto 30px;
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1);opacity:1;}
+    50%{transform:scale(1.05);opacity:0.9;}
+  }
+  h1{
+    font-family:'Playfair Display',serif;font-weight:700;font-style:italic;
+    font-size:clamp(28px,5vw,42px);margin-bottom:16px;color:var(--paper);
+  }
+  .subtitle{
+    color:var(--gold);font-size:14px;letter-spacing:0.1em;
+    text-transform:uppercase;margin-bottom:24px;
+  }
+  .message{
+    color:#b3a290;font-size:16px;line-height:1.7;margin-bottom:32px;
+  }
+  .message strong{color:var(--paper);font-weight:500;}
+  .countdown-box{
+    background:var(--line);border:1px solid rgba(198,163,94,0.3);
+    padding:20px 30px;margin-bottom:32px;
+  }
+  .countdown-label{
+    font-size:12px;letter-spacing:0.1em;text-transform:uppercase;
+    color:#b3a290;margin-bottom:8px;
+  }
+  .countdown{
+    font-family:'Playfair Display',serif;font-size:48px;
+    color:var(--gold);font-weight:700;
+  }
+  .ig-btn{
+    display:inline-block;
+    background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+    color:white;padding:16px 40px;
+    font-size:14px;letter-spacing:0.08em;text-transform:uppercase;
+    text-decoration:none;font-weight:500;
+    transition:transform 0.2s,opacity 0.2s;
+  }
+  .ig-btn:hover{transform:translateY(-2px);opacity:0.9;}
+  .note{
+    margin-top:24px;font-size:13px;color:#5c584f;
+  }
+  @media(max-width:600px){
+    .container{padding:24px 16px;}
+    .countdown{font-size:36px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="success-icon">✓</div>
+  <div class="subtitle">Platba prebehla úspešne</div>
+  <h1>Ďakujeme za zálohu!</h1>
+  
+  <div class="message">
+    <strong>20€ záloha bola prijatá.</strong><br><br>
+    Detaily ohľadom tetovania, presného dátumu a ďalších informácií
+    sa vybavia <strong>ďalej v Instagram DMs</strong>.
+  </div>
+  
+  <div class="countdown-box">
+    <div class="countdown-label">Presmerovanie na Instagram za</div>
+    <div class="countdown" id="countdown">5</div>
+  </div>
+  
+  <a href="https://www.instagram.com/inkedbyshiki/" target="_blank" class="ig-btn" id="igLink">
+    Otvoriť Instagram
+  </a>
+  
+  <div class="note">Ak sa nepresmeruje automaticky, klikni na tlačidlo vyššie.</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+(function(){
+  // EmailJS init
+  emailjs.init('4civUYRjKfw6Bsa_K');
+  
+  // Get booking data from localStorage
+  const bookingData = JSON.parse(localStorage.getItem('inkedbyshiki-booking') || '{}');
+  
+  // Send email to tattoo artist
+  if(bookingData.name) {
+    emailjs.send('service_78f5x4k', 'template_0kbmdkp', {
+      from_name: bookingData.name,
+      from_email: bookingData.email,
+      phone: bookingData.phone,
+      message: bookingData.message,
+      date: bookingData.dateFormatted,
+      slot: bookingData.slot
+    }).then(function(response) {
+      console.log('Email odoslaný:', response);
+    }).catch(function(error) {
+      console.error('Chyba emailu:', error);
+    });
+  }
+  
+  // Countdown and redirect
+  let seconds = 5;
+  const countdownEl = document.getElementById('countdown');
+  const igLink = document.getElementById('igLink');
+  
+  const timer = setInterval(function(){
+    seconds--;
+    countdownEl.textContent = seconds;
+    if(seconds <= 0) {
+      clearInterval(timer);
+      window.location.href = 'https://www.instagram.com/inkedbyshiki/';
+    }
+  }, 1000);
+  
+  // Clean up booking data
+  localStorage.removeItem('inkedbyshiki-booking');
+})();
+</script>
+</body>
+</html>

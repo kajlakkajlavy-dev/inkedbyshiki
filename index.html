@@ -833,6 +833,9 @@
   }
   renderClientCalendar();
 
+  // Stripe Payment Link URL
+  const STRIPE_PAYMENT_URL = 'https://buy.stripe.com/test_9B66oH7RL2xLfNo3Jw5gc00';
+  
   document.querySelector('#booking form').addEventListener('submit', function(e){
     e.preventDefault();
     if(!selected.date || !selected.slot){
@@ -843,7 +846,20 @@
     day[selected.slot] = 'booked';
     setDay(selected.date, day);
     const label = selected.slot==='am' ? 'dopoludnia' : 'popoludní';
-    alert(`Testovacia verzia — dopyt "odoslaný" na ${fmtDate(selected.date)} (${label}). V reálnej prevádzke by toto šlo priamo tatérovi.`);
+    // Save booking data to localStorage
+    const bookingData = {
+      name: document.getElementById('name').value,
+      phone: document.getElementById('phone').value,
+      email: document.getElementById('email').value,
+      message: document.getElementById('desc').value,
+      date: selected.date,
+      dateFormatted: fmtDate(selected.date),
+      slot: selected.slot === 'am' ? 'dopoludnia' : 'popoludnie'
+    };
+    localStorage.setItem('inkedbyshiki-booking', JSON.stringify(bookingData));
+    
+    // Redirect to Stripe Payment Link
+    window.location.href = STRIPE_PAYMENT_URL;
     clientSelectedKey = selected.date;
     renderClientCalendar();
     renderSlotPicker(selected.date);
