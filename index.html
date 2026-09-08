@@ -1160,6 +1160,13 @@ function toggleAdminMode(enable) {
       el.classList.remove('editing');
       el.removeAttribute('contenteditable');
     });
+    // Hide admin panel and photo manager
+    const ap = document.getElementById('adminPanel');
+    if(ap) ap.setAttribute('hidden','');
+    const pm = document.getElementById('photoManager');
+    if(pm) pm.style.display = 'none';
+    // Remove edit icons
+    document.querySelectorAll('.edit-icon-btn').forEach(e => e.remove());
   }
 }
 
